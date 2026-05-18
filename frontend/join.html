@@ -7,7 +7,7 @@
     <style>
         @font-face {
             font-family: 'ArkPixel';
-            src: url('/static/fonts/ark-pixel-12px-proportional-zh_cn.ttf.woff2') format('woff2');
+            src: url('{{BASE_PATH}}/static/fonts/ark-pixel-12px-proportional-zh_cn.ttf.woff2') format('woff2');
             font-weight: normal;
             font-style: normal;
         }
@@ -123,7 +123,7 @@
         <a href="/invite" style="color:#ffd700; text-decoration: underline;">https://office.example.com/invite</a>
     </div>
 
-    <script>
+    <script>const BASE_PATH = '{{BASE_PATH}}';</script><script>
         const joinBtn = document.getElementById('joinBtn');
         const leaveBtn = document.getElementById('leaveBtn');
         const statusDiv = document.getElementById('status');
@@ -148,7 +148,7 @@
                 return;
             }
             try {
-                const response = await fetch('/join-agent', {
+                const response = await fetch(BASE_PATH + '/join-agent', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name, joinKey })
@@ -171,7 +171,7 @@
                 return;
             }
             try {
-                const response = await fetch('/leave-agent', {
+                const response = await fetch(BASE_PATH + '/leave-agent', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name })

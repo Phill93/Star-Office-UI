@@ -5,6 +5,7 @@ from flask import Flask, jsonify, send_from_directory, make_response, request, s
 from datetime import datetime, timedelta
 import json
 import os
+BASE_PATH = os.environ.get("STAR_BASE_PATH", "").rstrip("/")
 import random
 import math
 import re
@@ -80,7 +81,6 @@ STATE_TO_AREA_MAP = {
     "error": "error",
 }
 
-
 app = Flask(__name__, static_folder=FRONTEND_DIR, static_url_path="/static")
 app.secret_key = os.getenv("FLASK_SECRET_KEY") or os.getenv("STAR_OFFICE_SECRET") or "star-office-dev-secret-change-me"
 
@@ -91,6 +91,7 @@ app.config.update(
     SESSION_COOKIE_SECURE=is_production_mode(),
     PERMANENT_SESSION_LIFETIME=timedelta(hours=12),
 )
+app.config["APPLICATION_ROOT"] = BASE_PATH
 
 # Guard join-agent critical section to enforce per-key concurrency under parallel requests
 join_lock = threading.Lock()
@@ -113,16 +114,13 @@ if is_production_mode():
     if hardening_errors:
         raise RuntimeError("Security hardening check failed in production mode: " + "; ".join(hardening_errors))
 
-
 def _is_asset_editor_authed() -> bool:
     return bool(session.get("asset_editor_authed"))
-
 
 def _require_asset_editor_auth():
     if _is_asset_editor_authed():
         return None
     return jsonify({"ok": False, "code": "UNAUTHORIZED", "msg": "Asset editor auth required"}), 401
-
 
 @app.after_request
 def add_no_cache_headers(response):
@@ -149,7 +147,6 @@ DEFAULT_STATE = {
     "progress": 0,
     "updated_at": datetime.now().isoformat()
 }
-
 
 def load_state():
     """Load state from file.
@@ -200,7 +197,6 @@ def load_state():
 
     return state
 
-
 def get_office_name_from_identity():
     """Read office display name from OpenClaw workspace IDENTITY.md (Name field) -> 'XXX的办公室'."""
     if not os.path.isfile(IDENTITY_FILE):
@@ -216,12 +212,10 @@ def get_office_name_from_identity():
         pass
     return None
 
-
 def save_state(state: dict):
     """Save state to file"""
     with open(STATE_FILE, "w", encoding="utf-8") as f:
         json.dump(state, f, ensure_ascii=False, indent=2)
-
 
 def ensure_electron_standalone_snapshot():
     """Create Electron standalone frontend snapshot once if missing.
@@ -238,15 +232,12 @@ def ensure_electron_standalone_snapshot():
     except Exception as e:
         print(f"[standalone] create failed: {e}")
 
-
 # Initialize state
 if not os.path.exists(STATE_FILE):
     save_state(DEFAULT_STATE)
 ensure_electron_standalone_snapshot()
 
-
 _INDEX_HTML_CACHE = None
-
 
 @app.route("/", methods=["GET"])
 def index():
@@ -259,12 +250,11 @@ def index():
     if _INDEX_HTML_CACHE is None:
         with open(FRONTEND_INDEX_FILE, "r", encoding="utf-8") as f:
             raw_html = f.read()
-        _INDEX_HTML_CACHE = raw_html.replace("{{VERSION_TIMESTAMP}}", VERSION_TIMESTAMP)
+        _INDEX_HTML_CACHE = raw_html.replace("{{VERSION_TIMESTAMP}}", VERSION_TIMESTAMP).replace("{{BASE_PATH}}", BASE_PATH)
 
     resp = make_response(_INDEX_HTML_CACHE)
     resp.headers["Content-Type"] = "text/html; charset=utf-8"
     return resp
-
 
 @app.route("/electron-standalone", methods=["GET"])
 def electron_standalone_page():
@@ -275,14 +265,13 @@ def electron_standalone_page():
         target = FRONTEND_INDEX_FILE
     with open(target, "r", encoding="utf-8") as f:
         html = f.read()
-    html = html.replace("{{VERSION_TIMESTAMP}}", VERSION_TIMESTAMP)
+    html = html.replace("{{VERSION_TIMESTAMP}}", VERSION_TIMESTAMP).replace("{{BASE_PATH}}", BASE_PATH)
     resp = make_response(html)
     resp.headers["Content-Type"] = "text/html; charset=utf-8"
     return resp
 
     resp.headers["Content-Type"] = "text/html; charset=utf-8"
     return resp
-
 
 @app.route("/join", methods=["GET"])
 def join_page():
@@ -293,7 +282,6 @@ def join_page():
     resp.headers["Content-Type"] = "text/html; charset=utf-8"
     return resp
 
-
 @app.route("/invite", methods=["GET"])
 def invite_page():
     """Serve human-facing invite instruction page"""
@@ -302,7 +290,6 @@ def invite_page():
     resp = make_response(html)
     resp.headers["Content-Type"] = "text/html; charset=utf-8"
     return resp
-
 
 DEFAULT_AGENTS = [
     {
@@ -321,45 +308,35 @@ DEFAULT_AGENTS = [
     }
 ]
 
-
 def load_agents_state():
     return _store_load_agents_state(AGENTS_STATE_FILE, DEFAULT_AGENTS)
-
 
 def save_agents_state(agents):
     _store_save_agents_state(AGENTS_STATE_FILE, agents)
 
-
 def load_asset_positions():
     return _store_load_asset_positions(ASSET_POSITIONS_FILE)
-
 
 def save_asset_positions(data):
     _store_save_asset_positions(ASSET_POSITIONS_FILE, data)
 
-
 def load_asset_defaults():
     return _store_load_asset_defaults(ASSET_DEFAULTS_FILE)
-
 
 def save_asset_defaults(data):
     _store_save_asset_defaults(ASSET_DEFAULTS_FILE, data)
 
-
 def load_runtime_config():
     return _store_load_runtime_config(RUNTIME_CONFIG_FILE)
 
-
 def save_runtime_config(data):
     _store_save_runtime_config(RUNTIME_CONFIG_FILE, data)
-
 
 def _ensure_home_favorites_index():
     os.makedirs(HOME_FAVORITES_DIR, exist_ok=True)
     if not os.path.exists(HOME_FAVORITES_INDEX_FILE):
         with open(HOME_FAVORITES_INDEX_FILE, "w", encoding="utf-8") as f:
             json.dump({"items": []}, f, ensure_ascii=False, indent=2)
-
 
 def _load_home_favorites_index():
     _ensure_home_favorites_index()
@@ -372,12 +349,10 @@ def _load_home_favorites_index():
         pass
     return {"items": []}
 
-
 def _save_home_favorites_index(data):
     _ensure_home_favorites_index()
     with open(HOME_FAVORITES_INDEX_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
-
 
 def _maybe_apply_random_home_favorite():
     """On page open, randomly apply one saved home favorite if available."""
@@ -416,14 +391,11 @@ def _maybe_apply_random_home_favorite():
     except Exception as e:
         return False, str(e)
 
-
 def load_join_keys():
     return _store_load_join_keys(JOIN_KEYS_FILE)
 
-
 def save_join_keys(data):
     _store_save_join_keys(JOIN_KEYS_FILE, data)
-
 
 def _ensure_magick_or_ffmpeg_available():
     if shutil.which("magick"):
@@ -431,7 +403,6 @@ def _ensure_magick_or_ffmpeg_available():
     if shutil.which("ffmpeg"):
         return "ffmpeg"
     return None
-
 
 def _probe_animated_frame_size(upload_path: str):
     """Return (w,h) from first frame if possible."""
@@ -459,7 +430,6 @@ def _probe_animated_frame_size(upload_path: str):
         except Exception:
             pass
     return None, None
-
 
 def _animated_to_spritesheet(
     upload_path: str,
@@ -559,7 +529,6 @@ def _animated_to_spritesheet(
             raise RuntimeError("ffmpeg 拼图失败")
         return out_path, frames, 1, frames, out_fw, out_fh
 
-
 def normalize_agent_state(s):
     """Normalize agent state for compatibility.
     Maps synonyms (e.g. working/busy -> writing, run/running -> executing) into VALID_AGENT_STATES.
@@ -580,7 +549,6 @@ def normalize_agent_state(s):
         return s_lower
     return 'idle'
 
-
 # User-facing model aliases -> provider model ids
 USER_MODEL_TO_PROVIDER_MODELS = {
     # 严格按用户要求：仅两种官方模型映射
@@ -598,7 +566,6 @@ PROVIDER_MODEL_TO_USER_MODEL = {
     for provider in providers
 }
 
-
 def _normalize_user_model(model_name: str) -> str:
     m = (model_name or "").strip()
     if not m:
@@ -610,11 +577,9 @@ def _normalize_user_model(model_name: str) -> str:
         return PROVIDER_MODEL_TO_USER_MODEL[low]
     return "nanobanana-pro"
 
-
 def _provider_model_candidates(user_model: str):
     normalized = _normalize_user_model(user_model)
     return list(USER_MODEL_TO_PROVIDER_MODELS.get(normalized, USER_MODEL_TO_PROVIDER_MODELS["nanobanana-pro"]))
-
 
 def _generate_rpg_background_to_webp(out_webp_path: str, width: int = 1280, height: int = 720, custom_prompt: str = "", speed_mode: str = "fast"):
     """Generate RPG-style room background and save as webp.
@@ -807,11 +772,9 @@ def _generate_rpg_background_to_webp(out_webp_path: str, width: int = 1280, heig
                 im = im.resize((width, height), Image.Resampling.LANCZOS)
             im.save(out_webp_path, "WEBP", lossless=True, quality=100, method=6)
 
-
 def state_to_area(state):
     """Map agent state to office area (breakroom / writing / error)."""
     return STATE_TO_AREA_MAP.get(state, "breakroom")
-
 
 # Ensure files exist
 if not os.path.exists(AGENTS_STATE_FILE):
@@ -833,7 +796,6 @@ if os.path.exists(RUNTIME_CONFIG_FILE):
         os.chmod(RUNTIME_CONFIG_FILE, 0o600)
     except Exception:
         pass
-
 
 @app.route("/agents", methods=["GET"])
 def get_agents():
@@ -887,7 +849,6 @@ def get_agents():
 
     return jsonify(cleaned_agents)
 
-
 @app.route("/agent-approve", methods=["POST"])
 def agent_approve():
     """Approve an agent (set authStatus to approved)"""
@@ -910,7 +871,6 @@ def agent_approve():
         return jsonify({"ok": True, "agentId": agent_id, "authStatus": "approved"})
     except Exception as e:
         return jsonify({"ok": False, "msg": str(e)}), 500
-
 
 @app.route("/agent-reject", methods=["POST"])
 def agent_reject():
@@ -948,7 +908,6 @@ def agent_reject():
         return jsonify({"ok": True, "agentId": agent_id, "authStatus": "rejected"})
     except Exception as e:
         return jsonify({"ok": False, "msg": str(e)}), 500
-
 
 @app.route("/join-agent", methods=["POST"])
 def join_agent():
@@ -1094,7 +1053,6 @@ def join_agent():
     except Exception as e:
         return jsonify({"ok": False, "msg": str(e)}), 500
 
-
 @app.route("/leave-agent", methods=["POST"])
 def leave_agent():
     """Remove an agent and free its one-time join key for reuse (optional)
@@ -1142,7 +1100,6 @@ def leave_agent():
     except Exception as e:
         return jsonify({"ok": False, "msg": str(e)}), 500
 
-
 @app.route("/status", methods=["GET"])
 def get_status():
     """Get current main state (backward compatibility). Optionally include officeName from IDENTITY.md."""
@@ -1151,7 +1108,6 @@ def get_status():
     if office_name:
         state["officeName"] = office_name
     return jsonify(state)
-
 
 @app.route("/agent-push", methods=["POST"])
 def agent_push():
@@ -1196,7 +1152,6 @@ def agent_push():
             except Exception:
                 pass
 
-
         agents = load_agents_state()
         target = next((a for a in agents if a.get("agentId") == agent_id and not a.get("isMain")), None)
         if not target:
@@ -1230,7 +1185,6 @@ def agent_push():
     except Exception as e:
         return jsonify({"ok": False, "msg": str(e)}), 500
 
-
 @app.route("/health", methods=["GET"])
 def health():
     """Health check"""
@@ -1239,7 +1193,6 @@ def health():
         "service": "star-office-ui",
         "timestamp": datetime.now().isoformat(),
     })
-
 
 @app.route("/yesterday-memo", methods=["GET"])
 def get_yesterday_memo():
@@ -1286,7 +1239,6 @@ def get_yesterday_memo():
             "msg": str(e)
         }), 500
 
-
 @app.route("/set_state", methods=["POST"])
 def set_state_endpoint():
     """Set state via POST (for UI control panel)"""
@@ -1307,13 +1259,11 @@ def set_state_endpoint():
     except Exception as e:
         return jsonify({"status": "error", "msg": str(e)}), 500
 
-
 @app.route("/assets/template.zip", methods=["GET"])
 def assets_template_download():
     if not os.path.exists(ASSET_TEMPLATE_ZIP):
         return jsonify({"ok": False, "msg": "模板包不存在，请先生成"}), 404
     return send_from_directory(ROOT_DIR, "assets-replace-template.zip", as_attachment=True)
-
 
 @app.route("/assets/list", methods=["GET"])
 def assets_list():
@@ -1345,7 +1295,6 @@ def assets_list():
         })
     items.sort(key=lambda x: x["path"])
     return jsonify({"ok": True, "count": len(items), "items": items})
-
 
 def _bg_generate_worker(task_id: str, custom_prompt: str, speed_mode: str):
     """Background worker for RPG background generation."""
@@ -1400,7 +1349,6 @@ def _bg_generate_worker(task_id: str, custom_prompt: str, speed_mode: str):
         with _bg_tasks_lock:
             _bg_tasks[task_id] = {"status": "error", "result": error_result}
 
-
 @app.route("/assets/generate-rpg-background", methods=["POST"])
 def assets_generate_rpg_background():
     """Start async RPG background generation. Returns a task_id for polling."""
@@ -1445,7 +1393,6 @@ def assets_generate_rpg_background():
     except Exception as e:
         return jsonify({"ok": False, "msg": str(e)}), 500
 
-
 @app.route("/assets/generate-rpg-background/poll", methods=["GET"])
 def assets_generate_rpg_background_poll():
     """Poll async generation task status."""
@@ -1473,7 +1420,6 @@ def assets_generate_rpg_background_poll():
         result = task.get("result", {})
         code = 400 if result.get("code") else 500
         return jsonify({"ok": False, "status": "error", **result}), code
-
 
 @app.route("/assets/restore-reference-background", methods=["POST"])
 def assets_restore_reference_background():
@@ -1522,7 +1468,6 @@ def assets_restore_reference_background():
     except Exception as e:
         return jsonify({"ok": False, "msg": str(e)}), 500
 
-
 @app.route("/assets/restore-last-generated-background", methods=["POST"])
 def assets_restore_last_generated_background():
     """Restore office_bg_small.webp from latest bg-history snapshot."""
@@ -1562,7 +1507,6 @@ def assets_restore_last_generated_background():
     except Exception as e:
         return jsonify({"ok": False, "msg": str(e)}), 500
 
-
 @app.route("/assets/home-favorites/list", methods=["GET"])
 def assets_home_favorites_list():
     guard = _require_asset_editor_auth()
@@ -1592,14 +1536,12 @@ def assets_home_favorites_list():
     except Exception as e:
         return jsonify({"ok": False, "msg": str(e)}), 500
 
-
 @app.route("/assets/home-favorites/file/<path:filename>", methods=["GET"])
 def assets_home_favorites_file(filename):
     guard = _require_asset_editor_auth()
     if guard:
         return guard
     return send_from_directory(HOME_FAVORITES_DIR, filename)
-
 
 @app.route("/assets/home-favorites/save-current", methods=["POST"])
 def assets_home_favorites_save_current():
@@ -1644,7 +1586,6 @@ def assets_home_favorites_save_current():
     except Exception as e:
         return jsonify({"ok": False, "msg": str(e)}), 500
 
-
 @app.route("/assets/home-favorites/delete", methods=["POST"])
 def assets_home_favorites_delete():
     guard = _require_asset_editor_auth()
@@ -1675,7 +1616,6 @@ def assets_home_favorites_delete():
         return jsonify({"ok": True, "id": item_id, "msg": "已删除收藏"})
     except Exception as e:
         return jsonify({"ok": False, "msg": str(e)}), 500
-
 
 @app.route("/assets/home-favorites/apply", methods=["POST"])
 def assets_home_favorites_apply():
@@ -1711,7 +1651,6 @@ def assets_home_favorites_apply():
     except Exception as e:
         return jsonify({"ok": False, "msg": str(e)}), 500
 
-
 @app.route("/assets/auth", methods=["POST"])
 def assets_auth():
     try:
@@ -1724,7 +1663,6 @@ def assets_auth():
     except Exception as e:
         return jsonify({"ok": False, "msg": str(e)}), 500
 
-
 @app.route("/assets/auth/status", methods=["GET"])
 def assets_auth_status():
     return jsonify({
@@ -1732,7 +1670,6 @@ def assets_auth_status():
         "authed": _is_asset_editor_authed(),
         "drawer_default_pass": ASSET_DRAWER_PASS_DEFAULT == "1234",
     })
-
 
 @app.route("/assets/positions", methods=["GET"])
 def assets_positions_get():
@@ -1743,7 +1680,6 @@ def assets_positions_get():
         return jsonify({"ok": True, "items": load_asset_positions()})
     except Exception as e:
         return jsonify({"ok": False, "msg": str(e)}), 500
-
 
 @app.route("/assets/positions", methods=["POST"])
 def assets_positions_set():
@@ -1773,7 +1709,6 @@ def assets_positions_set():
     except Exception as e:
         return jsonify({"ok": False, "msg": str(e)}), 500
 
-
 @app.route("/assets/defaults", methods=["GET"])
 def assets_defaults_get():
     guard = _require_asset_editor_auth()
@@ -1783,7 +1718,6 @@ def assets_defaults_get():
         return jsonify({"ok": True, "items": load_asset_defaults()})
     except Exception as e:
         return jsonify({"ok": False, "msg": str(e)}), 500
-
 
 @app.route("/assets/defaults", methods=["POST"])
 def assets_defaults_set():
@@ -1813,7 +1747,6 @@ def assets_defaults_set():
     except Exception as e:
         return jsonify({"ok": False, "msg": str(e)}), 500
 
-
 @app.route("/config/gemini", methods=["GET"])
 def gemini_config_get():
     guard = _require_asset_editor_auth()
@@ -1832,7 +1765,6 @@ def gemini_config_get():
     except Exception as e:
         return jsonify({"ok": False, "msg": str(e)}), 500
 
-
 @app.route("/config/gemini", methods=["POST"])
 def gemini_config_set():
     guard = _require_asset_editor_auth()
@@ -1849,7 +1781,6 @@ def gemini_config_set():
         return jsonify({"ok": True, "msg": "Gemini 配置已保存"})
     except Exception as e:
         return jsonify({"ok": False, "msg": str(e)}), 500
-
 
 @app.route("/assets/restore-default", methods=["POST"])
 def assets_restore_default():
@@ -1887,7 +1818,6 @@ def assets_restore_default():
     except Exception as e:
         return jsonify({"ok": False, "msg": str(e)}), 500
 
-
 @app.route("/assets/restore-prev", methods=["POST"])
 def assets_restore_prev():
     guard = _require_asset_editor_auth()
@@ -1915,7 +1845,6 @@ def assets_restore_prev():
         return jsonify({"ok": True, "path": rel_path, "size": st.st_size, "msg": "已回退到上一版"})
     except Exception as e:
         return jsonify({"ok": False, "msg": str(e)}), 500
-
 
 @app.route("/assets/upload", methods=["POST"])
 def assets_upload():
@@ -2064,6 +1993,32 @@ def assets_upload():
     except Exception as e:
         return jsonify({"ok": False, "msg": str(e)}), 500
 
+# ─── WSGI middleware: strip BASE_PATH prefix from incoming requests ───
+# Flask's APPLICATION_ROOT only affects URL generation, not route matching.
+# This middleware strips the prefix so Flask sees "/status" instead of "/office/status".
+class SubPathMiddleware:
+    def __init__(self, app, prefix):
+        self.app = app
+        self.prefix = prefix.rstrip("/")
+
+    def __call__(self, environ, start_response):
+        path_info = environ.get("PATH_INFO", "")
+        if self.prefix and path_info.startswith(self.prefix + "/"):
+            environ["SCRIPT_NAME"] = environ.get("SCRIPT_NAME", "") + self.prefix
+            environ["PATH_INFO"] = path_info[len(self.prefix):]
+        elif self.prefix and path_info == self.prefix:
+            # Exact match: /office -> /
+            environ["SCRIPT_NAME"] = environ.get("SCRIPT_NAME", "") + self.prefix
+            environ["PATH_INFO"] = "/"
+        return self.app(environ, start_response)
+
+
+def create_app():
+    """Create and optionally wrap the app with subpath middleware."""
+    if BASE_PATH:
+        return SubPathMiddleware(app, BASE_PATH)
+    return app
+
 
 if __name__ == "__main__":
     raw_port = os.environ.get("STAR_BACKEND_PORT", "19000")
@@ -2099,5 +2054,11 @@ if __name__ == "__main__":
             print("Security hardening: OK")
     print("=" * 50)
 
-    app.run(host="0.0.0.0", port=backend_port, debug=False)
+    wrapped = create_app()
+    if wrapped is app:
+        app.run(host="0.0.0.0", port=backend_port, debug=False)
+    else:
+        # WSGI middleware wraps app; use werkzeug serving
+        from werkzeug.serving import run_simple
+        run_simple("0.0.0.0", backend_port, wrapped, use_reloader=False)
 

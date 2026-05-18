@@ -7,7 +7,7 @@
     <style>
         @font-face {
             font-family: 'ArkPixel';
-            src: url('/static/fonts/ark-pixel-12px-proportional-zh_cn.ttf.woff2') format('woff2');
+            src: url('{{BASE_PATH}}/static/fonts/ark-pixel-12px-proportional-zh_cn.ttf.woff2') format('woff2');
             font-weight: normal;
             font-style: normal;
         }
@@ -468,16 +468,16 @@
         }
         #asset-move-row .btn-move { color:#1f2937; }
         #asset-move-row .btn-move {
-            background-image:url('/static/btn-move-house-sprite.png?v={{VERSION_TIMESTAMP}}');
+            background-image:url('{{BASE_PATH}}/static/btn-move-house-sprite.png?v={{VERSION_TIMESTAMP}}');
         }
         #asset-move-row .btn-home {
-            background-image:url('/static/btn-back-home-sprite.png?v={{VERSION_TIMESTAMP}}');
+            background-image:url('{{BASE_PATH}}/static/btn-back-home-sprite.png?v={{VERSION_TIMESTAMP}}');
         }
         #asset-broker-row .btn-broker {
-            background-image:url('/static/btn-broker-sprite.png?v={{VERSION_TIMESTAMP}}');
+            background-image:url('{{BASE_PATH}}/static/btn-broker-sprite.png?v={{VERSION_TIMESTAMP}}');
         }
         #asset-broker-row .btn-diy {
-            background-image:url('/static/btn-diy-sprite.png?v={{VERSION_TIMESTAMP}}');
+            background-image:url('{{BASE_PATH}}/static/btn-diy-sprite.png?v={{VERSION_TIMESTAMP}}');
         }
         #asset-manual-panel {
             margin-top:0;
@@ -648,7 +648,7 @@
         #control-bar #btn-state-writing,
         #control-bar #btn-state-syncing,
         #control-bar #btn-state-error {
-            background-image: url('/static/btn-state-sprite.png?v={{VERSION_TIMESTAMP}}');
+            background-image: url('{{BASE_PATH}}/static/btn-state-sprite.png?v={{VERSION_TIMESTAMP}}');
             background-color: transparent !important;
             background-repeat: no-repeat;
             background-size: 300% 100%;
@@ -683,7 +683,7 @@
         }
         /* 装修房间按钮使用像素精灵皮肤 */
         #control-bar #btn-open-drawer {
-            background-image: url('/static/btn-open-drawer-sprite.png?v={{VERSION_TIMESTAMP}}') !important;
+            background-image: url('{{BASE_PATH}}/static/btn-open-drawer-sprite.png?v={{VERSION_TIMESTAMP}}') !important;
             background-color: transparent !important;
             background-repeat: no-repeat !important;
             background-size: 300% 100% !important;
@@ -838,7 +838,7 @@
             position: relative;
             width: 460px;
             height: 300px;
-            background-image: url('/static/memo-bg.webp');
+            background-image: url('{{BASE_PATH}}/static/memo-bg.webp');
             background-size: cover;
             background-position: center;
             border: 4px solid #0e1119;
@@ -1287,7 +1287,8 @@
         <button id="lang-btn-cn" onclick="setUILanguage('zh')" style="padding:8px 10px; font-family:ArkPixel,monospace; font-size:13px; cursor:pointer; border:2px solid #333; border-radius:5px; background:#333; color:#fff;">CN</button>
     </div>
 
-    <script src="/static/vendor/phaser-3.80.1.min.js?v={{VERSION_TIMESTAMP}}"></script>
+    <script>const BASE_PATH = '{{BASE_PATH}}';</script>
+    <script src="{{BASE_PATH}}/static/vendor/phaser-3.80.1.min.js?v={{VERSION_TIMESTAMP}}"></script>
     <script>
         // 简易中英文切换
         let uiLang = localStorage.getItem('uiLang') || 'en';
@@ -1390,7 +1391,7 @@
         function ensureMemoBgVisible() {
             const panel = document.getElementById('memo-panel');
             if (!panel) return;
-            panel.style.backgroundImage = "url('/static/memo-bg.webp?v={{VERSION_TIMESTAMP}}')";
+            panel.style.backgroundImage = "url('{{BASE_PATH}}/static/memo-bg.webp?v={{VERSION_TIMESTAMP}}')";
             panel.classList.remove('no-bg');
         }
 
@@ -1552,7 +1553,7 @@
             const memoContent = document.getElementById('memo-content');
             
             try {
-                const response = await fetch('/yesterday-memo?t=' + Date.now(), { cache: 'no-store' });
+                const response = await fetch(BASE_PATH + '/yesterday-memo?t=' + Date.now(), { cache: 'no-store' });
                 const data = await response.json();
                 
                 if (data.success && data.memo) {
@@ -1725,7 +1726,7 @@
 
         // 状态控制栏函数（用于测试）
         function setState(state, detail) {
-            fetch('/set_state', {
+            fetch(BASE_PATH + '/set_state', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ state, detail })
@@ -1763,7 +1764,7 @@
                 return;
             }
             try {
-                const res = await fetch('/assets/auth', {
+                const res = await fetch(BASE_PATH + '/assets/auth', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ password: val })
@@ -2165,12 +2166,12 @@
                 let serverPositions = {};
                 let serverDefaults = {};
                 try {
-                    const res = await fetch('/assets/positions?t=' + Date.now(), { cache: 'no-store' });
+                    const res = await fetch(BASE_PATH + '/assets/positions?t=' + Date.now(), { cache: 'no-store' });
                     const data = await res.json();
                     if (data && data.ok && data.items) serverPositions = data.items;
                 } catch (e) {}
                 try {
-                    const res2 = await fetch('/assets/defaults?t=' + Date.now(), { cache: 'no-store' });
+                    const res2 = await fetch(BASE_PATH + '/assets/defaults?t=' + Date.now(), { cache: 'no-store' });
                     const data2 = await res2.json();
                     if (data2 && data2.ok && data2.items) serverDefaults = data2.items;
                 } catch (e) {}
@@ -2377,7 +2378,7 @@
                 const timer = setInterval(draw, 120);
                 assetThumbTimers.push(timer);
             };
-            img.src = `/static/${item.path}?t=${Date.now()}`;
+            img.src = BASE_PATH + `/static/${item.path}?t=${Date.now()}`;
         }
 
         function isAssetHidden(path) {
@@ -2481,7 +2482,7 @@
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                     tryAnimateAssetThumb(it);
                 };
-                img.src = `/static/${it.path}?t=${Date.now()}`;
+                img.src = BASE_PATH + `/static/${it.path}?t=${Date.now()}`;
             });
         }
 
@@ -2489,7 +2490,7 @@
             const out = document.getElementById('asset-upload-result');
             try {
                 const selectedPath = (selectedAssetInfo && selectedAssetInfo.path) ? selectedAssetInfo.path : '';
-                const res = await fetch('/assets/list?t=' + Date.now(), { cache: 'no-store' });
+                const res = await fetch(BASE_PATH + '/assets/list?t=' + Date.now(), { cache: 'no-store' });
                 const data = await res.json();
                 assetListData = data.items || [];
 
@@ -2583,7 +2584,7 @@
             const oldKey = sprite.texture.key;
             const ext = path.split('.').pop();
             const newKey = `${oldKey}_live_${Date.now()}`;
-            const url = `/static/${path}?t=${Date.now()}`;
+            const url = BASE_PATH + `/static/${path}?t=${Date.now()}`;
 
             return new Promise((resolve) => {
                 try {
@@ -2658,7 +2659,7 @@
             }
 
             out.textContent = '⏳ 正在上传并替换，请稍候...';
-            const res = await fetch('/assets/upload', { method: 'POST', body: fd });
+            const res = await fetch(BASE_PATH + '/assets/upload', { method: 'POST', body: fd });
             const data = await res.json();
             if (!data.ok) {
                 out.textContent = `❌ 更新失败：${data.msg || res.status}`;
@@ -2848,13 +2849,13 @@ function toggleBrokerPanel() {
 
         async function ensureGeminiConfigLoaded() {
             try {
-                const authRes = await fetch('/assets/auth/status', { cache: 'no-store' });
+                const authRes = await fetch(BASE_PATH + '/assets/auth/status', { cache: 'no-store' });
                 const authData = await authRes.json();
                 assetDrawerAuthed = !!(authData && authData.ok && authData.authed);
                 updateAssetAuthUI();
                 if (!assetDrawerAuthed) return;
 
-                const res = await fetch('/config/gemini', { cache: 'no-store' });
+                const res = await fetch(BASE_PATH + '/config/gemini', { cache: 'no-store' });
                 const data = await res.json();
                 if (data && data.ok) {
                     window.geminiConfig = {
@@ -2882,7 +2883,7 @@ function toggleBrokerPanel() {
                 return;
             }
             try {
-                const res = await fetch('/config/gemini', {
+                const res = await fetch(BASE_PATH + '/config/gemini', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ api_key: key, model: 'nanobanana-pro' })
@@ -2916,7 +2917,7 @@ function toggleBrokerPanel() {
 
         // Async generation: start task then poll for result (avoids Cloudflare 524 timeout)
         async function _startAndPollGeneration(body, out, progressMsg) {
-            const res = await fetch('/assets/generate-rpg-background', {
+            const res = await fetch(BASE_PATH + '/assets/generate-rpg-background', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body)
@@ -2938,7 +2939,7 @@ function toggleBrokerPanel() {
                 const elapsed = Math.round((Date.now() - startTime) / 1000);
                 out.textContent = progressMsg + '（已等待 ' + elapsed + '秒）' + '.'.repeat(dots);
                 try {
-                    const pollRes = await fetch('/assets/generate-rpg-background/poll?task_id=' + encodeURIComponent(taskId));
+                    const pollRes = await fetch(BASE_PATH + '/assets/generate-rpg-background/poll?task_id=' + encodeURIComponent(taskId));
                     const pollData = await pollRes.json();
                     if (pollData.status === 'pending') continue;
                     return pollData; // done or error
@@ -3049,7 +3050,7 @@ function toggleBrokerPanel() {
             showRoomLoadingOverlay();
             out.textContent = '🏡 正在回老家（恢复初始底图）...';
             try {
-                const res = await fetch('/assets/restore-reference-background', { method: 'POST' });
+                const res = await fetch(BASE_PATH + '/assets/restore-reference-background', { method: 'POST' });
                 const data = await res.json();
                 if (!data.ok) {
                     out.textContent = `❌ 恢复失败：${data.msg || res.status}`;
@@ -3084,7 +3085,7 @@ function toggleBrokerPanel() {
             showRoomLoadingOverlay();
             out.textContent = '↩️ 正在回退到最近一次生成底图...';
             try {
-                const res = await fetch('/assets/restore-last-generated-background', { method: 'POST' });
+                const res = await fetch(BASE_PATH + '/assets/restore-last-generated-background', { method: 'POST' });
                 const data = await res.json();
                 if (!data.ok) {
                     out.textContent = `❌ 回退失败：${data.msg || res.status}`;
@@ -3224,7 +3225,7 @@ function toggleBrokerPanel() {
             }
             if (!window.confirm(`⚠️ 确定将 ${path} 重置为默认资产吗？`)) return;
             try {
-                const res = await fetch('/assets/restore-default', {
+                const res = await fetch(BASE_PATH + '/assets/restore-default', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ path })
@@ -3250,7 +3251,7 @@ function toggleBrokerPanel() {
             }
             if (!window.confirm(`⚠️ 确定将 ${path} 回退到上一版吗？`)) return;
             try {
-                const res = await fetch('/assets/restore-prev', {
+                const res = await fetch(BASE_PATH + '/assets/restore-prev', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ path })
@@ -3331,7 +3332,7 @@ function toggleBrokerPanel() {
         }
 
         function leaveGuestAgent(agentId, name) {
-            fetch('/leave-agent', {
+            fetch(BASE_PATH + '/leave-agent', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ agentId, name })
@@ -3366,7 +3367,7 @@ function toggleBrokerPanel() {
         }
 
         function approveGuestAgent(agentId) {
-            fetch('/agent-approve', {
+            fetch(BASE_PATH + '/agent-approve', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ agentId })
@@ -3383,7 +3384,7 @@ function toggleBrokerPanel() {
         }
 
         function rejectGuestAgent(agentId) {
-            fetch('/agent-reject', {
+            fetch(BASE_PATH + '/agent-reject', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ agentId })
@@ -3840,7 +3841,7 @@ function toggleBrokerPanel() {
             // demo 随机状态先更新（不依赖后端）
             maybeRandomizeDemoVisitors();
 
-            return fetch('/agents?t=' + Date.now(), { cache: 'no-store' })
+            return fetch(BASE_PATH + '/agents?t=' + Date.now(), { cache: 'no-store' })
                 .then(response => response.json())
                 .then(data => {
                     // 无论后端返回是否为数组，demo=1 都应保证本地 demo 访客可见
@@ -3926,7 +3927,7 @@ function toggleBrokerPanel() {
             setTimeout(async () => {
                 // 动态探测 flowers 精灵表帧规格（避免写死 65x65 导致显示比例异常）
                 try {
-                    const res = await fetch('/assets/list?t=' + Date.now(), { cache: 'no-store' });
+                    const res = await fetch(BASE_PATH + '/assets/list?t=' + Date.now(), { cache: 'no-store' });
                     const data = await res.json();
                     if (data && data.ok && Array.isArray(data.items)) {
                         const flowerItem = data.items.find(it => (it.path || '').toLowerCase().includes('flowers-bloom-v2'));
@@ -3945,7 +3946,7 @@ function toggleBrokerPanel() {
                 // Only fetch /assets/positions and /assets/defaults when user is authed,
                 // to avoid 401 Unauthorized on first load for new visitors (issue #54).
                 try {
-                    const authRes = await fetch('/assets/auth/status', { cache: 'no-store' });
+                    const authRes = await fetch(BASE_PATH + '/assets/auth/status', { cache: 'no-store' });
                     const authData = await authRes.json();
                     if (authData && authData.ok && authData.authed) {
                         await applySavedPositionOverrides();
@@ -4663,7 +4664,7 @@ function toggleBrokerPanel() {
         }
 
         function fetchStatus() {
-            return fetch('/status', { cache: 'no-store' })
+            return fetch(BASE_PATH + '/status', { cache: 'no-store' })
                 .then(response => response.json())
                 .then(data => {
                     try {
